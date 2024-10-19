@@ -10,14 +10,26 @@ import queue
 
 logger = logging.getLogger("octoprint.plugins.octosse")
 
+
 class OctossePlugin(
     octoprint.plugin.SettingsPlugin,
     octoprint.plugin.AssetPlugin,
     octoprint.plugin.TemplatePlugin,
     octoprint.plugin.BlueprintPlugin,
+    octoprint.plugin.EventHandlerPlugin,
 ):
     def __init__(self):
         self.queues = []
+
+    def on_event(self, event, payload):
+        logger.debug(f"event {payload}")
+        for queue in self.queues:
+            queue.send_event(
+                {
+                    "event": event,
+                    "data": payload,
+                }
+            )
 
     @octoprint.plugin.BlueprintPlugin.route("/subscribe", methods=["GET"])
     def subscribe(self):
@@ -32,11 +44,18 @@ class OctossePlugin(
         }
         messages = self.listen() 
         stream = SseStream(messages)
-        self._printer.register_callback(OctosseCallback(self._printer, stream))
         stream.send_event(initial_data)
+        self.queues.append(stream)
         res = flask.Response(stream.stream(), mimetype='text/event-stream')
-        res.call_on_close(lambda: stream.done())
+        res.call_on_close(lambda: self.response_disconnected(stream))
         return res
+
+    def response_disconnected(self, stream):
+        stream.done()
+        try:
+            self.queues.remove(stream)
+        except:
+            pass
 
     def listen(self):
         q = queue.Queue(maxsize=1)
@@ -84,6 +103,7 @@ class OctossePlugin(
                 "pip": "https://github.com/FreeMasen/OctoPrint-Octosse/archive/{target_version}.zip",
             }
         }
+
 
 class SseStream:
     def __init__(self, queue):
