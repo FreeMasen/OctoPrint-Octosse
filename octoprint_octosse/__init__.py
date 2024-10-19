@@ -20,6 +20,9 @@ class OctossePlugin(
 
     def on_event(self, event, payload):
         logger.info(f"event: {event} {payload}")
+        if event != "PrinterStateChanged":
+            logger.info("unhandled event {}:\n{}".format(event, json.dumps(payload)))
+            return
         for queue in self.queues:
             queue.send_event(
                 {
