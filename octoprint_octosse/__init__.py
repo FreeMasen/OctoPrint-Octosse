@@ -21,6 +21,7 @@ class OctossePlugin(
 
     @octoprint.plugin.BlueprintPlugin.route("/subscribe", methods=["GET"])
     def subscribe(self):
+        logger.info("subscribing!")
         (connection_string, port, baudrate, printer_profile) = self._printer.get_current_connection()
         initial_data = self._printer.get_current_data()
         initial_data["connection"] = {
