@@ -7,6 +7,7 @@ import logging
 import octoprint.plugin
 import octoprint.printer
 import queue
+from typing import Generator
 
 logger = logging.getLogger("octoprint.plugins.octosse")
 
@@ -52,7 +53,7 @@ class OctossePlugin(
         stream = SseStream()
         self.queues.append(stream)
         res = flask.Response(stream.stream(initial_data), mimetype="text/event-stream")
-        res.call_on_close(lambda: self.response_disconnected(stream))
+        # res.call_on_close(lambda: self.response_disconnected(stream))
         return res
 
     def get_initial_info(self):
@@ -85,7 +86,7 @@ class SseStream:
         self.queue = queue.Queue(maxsize=0)
         self.not_done = True
 
-    def stream(self, initial_data):
+    def stream(self, initial_data) -> Generator[str, None, None]:
         if self.initial_data is not None:
             yield self.format_event(initial_data)
         while self.not_done:
