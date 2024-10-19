@@ -103,6 +103,7 @@ class SseStream:
         self.not_done = False
 
     def send_event(self, event):
+        logger.debug(f"send_event {event}")
         if not self.not_done:
             return
         event_json = json.dumps(event)
