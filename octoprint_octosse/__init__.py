@@ -17,7 +17,7 @@ class OctossePlugin(
 ):
     def __init__(self):
         self.queues = []
-    
+
     def on_startup(self, host, port):
         logger.debug(f"on_startup({host}, {port})")
 
@@ -37,14 +37,7 @@ class OctossePlugin(
     @octoprint.plugin.BlueprintPlugin.route("/subscribe", methods=["GET"])
     def subscribe(self):
         logger.info("subscribing!")
-        (connection_string, port, baudrate, printer_profile) = self._printer.get_current_connection()
-        initial_data = self._printer.get_current_data()
-        initial_data["connection"] = {
-            "connection_state": connection_string,
-            "port": port,
-            "baudrate": baudrate,
-            "profile": printer_profile,
-        }
+        initial_data = self.get_initial_info()
         messages = self.listen() 
         stream = SseStream(messages)
         stream.send_event(initial_data)
@@ -53,7 +46,21 @@ class OctossePlugin(
         res.call_on_close(lambda: self.response_disconnected(stream))
         return res
 
+    def get_initial_info(self):
+        (connection_string, port, baudrate, printer_profile) = (
+            self._printer.get_current_connection()
+        )
+        initial_data = self._printer.get_current_data()
+        initial_data["connection"] = {
+            "connection_state": connection_string,
+            "port": port,
+            "baudrate": baudrate,
+            "profile": printer_profile,
+        }
+        return initial_data
+
     def response_disconnected(self, stream):
+        logger.debug("response_disconnected")
         stream.done()
         try:
             self.queues.remove(stream)
