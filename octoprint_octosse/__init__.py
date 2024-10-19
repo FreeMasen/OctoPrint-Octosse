@@ -10,6 +10,17 @@ import queue
 
 logger = logging.getLogger("octoprint.plugins.octosse")
 
+IGNORED_EVENTS = set(
+    [
+        "ClientOpened",
+        "UserLoggedIn",
+        "ClientAuthed",
+        "ConnectionsAutorefreshed",
+        "Startup",
+        "plugin_firmware_check_warning",
+        "plugin_pi_support_throttle_state",
+    ]
+)
 
 class OctossePlugin(
     octoprint.plugin.SimpleApiPlugin,
@@ -19,8 +30,7 @@ class OctossePlugin(
         self.queues = []
 
     def on_event(self, event, payload):
-        logger.info(f"event: {event} {payload}")
-        if event != "PrinterStateChanged":
+        if event in IGNORED_EVENTS:
             logger.info("unhandled event {}:\n{}".format(event, json.dumps(payload)))
             return
         for queue in self.queues:
@@ -80,6 +90,7 @@ class SseStream:
         while self.not_done:
             try:
                 msg = self.queue.get()
+                logger.info("yielding {msg}")
                 yield msg
             except:
                 return
@@ -90,6 +101,7 @@ class SseStream:
     def send_event(self, event):
         if not self.not_done:
             return
+        logger.info("queueing {}".format(event.get("event", "unknown-event")))
         event_json = json.dumps(event)
         msg = f"data: {event_json}\n\n"
         self.queue.put_nowait(msg)
