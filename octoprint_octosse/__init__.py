@@ -109,6 +109,7 @@ class OctosseCallback(octoprint.printer.PrinterCallback):
         self.sink = sink
 
     def on_printer_send_current_data(self, data):
+        print(f"on_printer_send_current_data: {data}")
         try:
             self.sink.send_event(data)
         except:
