@@ -19,13 +19,13 @@ class OctossePlugin(
         self.queues = []
 
     def on_startup(self, host, port):
-        logger.debug(f"on_startup({host}, {port})")
+        logger.info(f"on_startup({host}, {port})")
 
     def on_after_startup(self):
-        logger.debug("on_after_startup")
+        logger.info("on_after_startup")
 
     def on_event(self, event, payload):
-        logger.debug(f"event {payload}")
+        logger.info(f"event {payload}")
         for queue in self.queues:
             queue.send_event(
                 {
@@ -60,7 +60,7 @@ class OctossePlugin(
         return initial_data
 
     def response_disconnected(self, stream):
-        logger.debug("response_disconnected")
+        logger.info("response_disconnected")
         stream.done()
         try:
             self.queues.remove(stream)
@@ -84,7 +84,7 @@ class SseStream:
         while self.not_done:
             try:
                 msg = self.queue.get()
-                logger.debug(f"yielding message {msg}")
+                logger.info(f"yielding message {msg}")
                 yield msg
             except:
                 return
@@ -93,7 +93,7 @@ class SseStream:
         self.not_done = False
 
     def send_event(self, event):
-        logger.debug(f"send_event {event}")
+        logger.info(f"send_event {event}")
         if not self.not_done:
             return
         event_json = json.dumps(event)
@@ -106,45 +106,45 @@ class OctosseCallback(octoprint.printer.PrinterCallback):
         self.sink = sink
 
     def on_printer_add_log(self, data):
-        logger.debug(f"on_printer_add_log: {data}")
+        logger.info(f"on_printer_add_log: {data}")
         try:
             self.sink.send_event(data)
         except Exception as ex:
-            logger.debug(f"error in on_printer_add_log, unregestering: {ex}")
+            logger.info(f"error in on_printer_add_log, unregestering: {ex}")
             self.printer.unregister_callback(self)
 
     def on_printer_add_message(self, data):
-        logger.debug(f"on_printer_add_message: {data}")
+        logger.info(f"on_printer_add_message: {data}")
         try:
             self.sink.send_event(data)
         except Exception as ex:
-            logger.debug(f"error in on_printer_add_message, unregestering: {ex}")
+            logger.info(f"error in on_printer_add_message, unregestering: {ex}")
             self.printer.unregister_callback(self)
 
     def on_printer_received_registered_message(self, data):
-        logger.debug(f"on_printer_received_registered_message: {data}")
+        logger.info(f"on_printer_received_registered_message: {data}")
         try:
             self.sink.send_event(data)
         except Exception as ex:
-            logger.debug(
+            logger.info(
                 f"error in on_printer_received_registered_message, unregestering: {ex}"
             )
             self.printer.unregister_callback(self)
 
     def on_printer_send_initial_data(self, data):
-        logger.debug(f"on_printer_send_initial_data: {data}")
+        logger.info(f"on_printer_send_initial_data: {data}")
         try:
             self.sink.send_event(data)
         except Exception as ex:
-            logger.debug(f"error in on_printer_send_initial_data, unregestering: {ex}")
+            logger.info(f"error in on_printer_send_initial_data, unregestering: {ex}")
             self.printer.unregister_callback(self)
 
     def on_printer_send_current_data(self, data):
-        logger.debug(f"on_printer_send_current_data: {data}")
+        logger.info(f"on_printer_send_current_data: {data}")
         try:
             self.sink.send_event(data)
         except Exception as ex:
-            logger.debug(f"error in on_printer_send_current_data, unregestering: {ex}")
+            logger.info(f"error in on_printer_send_current_data, unregestering: {ex}")
             self.printer.unregister_callback(self)
 
 __plugin_name__ = "Octosse Plugin"
