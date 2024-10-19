@@ -52,7 +52,14 @@ class OctossePlugin(
         initial_data = self.get_initial_info()
         stream = SseStream()
         self.queues.append(stream)
-        res = flask.Response(stream.stream(initial_data), mimetype="text/event-stream")
+        res = flask.Response(
+            stream.stream(initial_data),
+            mimetype="text/event-stream",
+            headers={
+                "Content-Type": "text/event-stream",
+                "Cache-Control": "no-cache",
+            }
+        )
         # res.call_on_close(lambda: self.response_disconnected(stream))
         return res
 
