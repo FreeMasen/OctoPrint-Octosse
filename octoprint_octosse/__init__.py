@@ -30,7 +30,7 @@ class OctossePlugin(
         stream = SseStream(messages)
         self._printer.register_callback(OctosseCallback(self._printer, stream))
         stream.send_event(initial_data)
-        res = flask.Response(stream.stream(initial_data), mimetype='text/event-stream')
+        res = flask.Response(stream.stream(), mimetype='text/event-stream')
         res.call_on_close(lambda: stream.done())
         return res
 
