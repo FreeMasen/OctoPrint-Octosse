@@ -8,6 +8,8 @@ import octoprint.plugin
 import octoprint.printer
 import queue
 
+logger = logging.getLogger("octoprint.plugins.octosse")
+
 class OctossePlugin(
     octoprint.plugin.SettingsPlugin,
     octoprint.plugin.AssetPlugin,
@@ -15,23 +17,7 @@ class OctossePlugin(
     octoprint.plugin.BlueprintPlugin,
 ):
     def __init__(self):
-        from octoprint.logging.handlers import CleaningTimedRotatingFileHandler
-        self._console_logger = logging.getLogger(
-            "octoprint.plugins.octosse.console"
-        )
-        console_logging_handler = CleaningTimedRotatingFileHandler(
-            self._settings.get_plugin_logfile_path(postfix="console"),
-            when="D",
-            backupCount=3,
-        )
-        console_logging_handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
-        self._console_logger.addHandler(console_logging_handler)
-        console_logging_handler.setLevel(logging.DEBUG)
-        self._console_logger.propagate = False
         self.queues = []
-
-    def debug_log(self, msg, *args):
-        self._console_logger.debug(msg, args)
 
     @octoprint.plugin.BlueprintPlugin.route("/subscribe", methods=["GET"])
     def subscribe(self):
@@ -44,8 +30,8 @@ class OctossePlugin(
             "profile": printer_profile,
         }
         messages = self.listen() 
-        stream = SseStream(messages, self._console_logger)
-        self._printer.register_callback(OctosseCallback(self._printer, stream, self._console_logger))
+        stream = SseStream(messages)
+        self._printer.register_callback(OctosseCallback(self._printer, stream))
         stream.send_event(initial_data)
         res = flask.Response(stream.stream(), mimetype='text/event-stream')
         res.call_on_close(lambda: stream.done())
@@ -99,16 +85,15 @@ class OctossePlugin(
         }
 
 class SseStream:
-    def __init__(self, queue, logger):
+    def __init__(self, queue):
         self.queue = queue
         self.not_done = True
-        self._logger = logger
 
     def stream(self):
         while self.not_done:
             try:
                 msg = self.queue.get()
-                self._logger.debug(f"yielding message {msg}")
+                logger.debug(f"yielding message {msg}")
                 yield msg
             except:
                 return
@@ -124,13 +109,12 @@ class SseStream:
         self.queue.put_nowait(msg)
 
 class OctosseCallback(octoprint.printer.PrinterCallback):
-    def __init__(self, printer, sink, logger):
+    def __init__(self, printer, sink):
         self.printer = printer
         self.sink = sink
-        self._logger = logger
 
     def on_printer_send_current_data(self, data):
-        self._logger.debug(f"on_printer_send_current_data: {data}")
+        logger.debug(f"on_printer_send_current_data: {data}")
         try:
             self.sink.send_event(data)
         except:
