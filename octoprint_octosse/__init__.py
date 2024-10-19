@@ -50,9 +50,8 @@ class OctossePlugin(
         logger.info("subscribing!")
         initial_data = self.get_initial_info()
         stream = SseStream()
-        stream.send_event(initial_data)
         self.queues.append(stream)
-        res = flask.Response(stream.stream(), mimetype='text/event-stream')
+        res = flask.Response(stream.stream(initial_data), mimetype="text/event-stream")
         res.call_on_close(lambda: self.response_disconnected(stream))
         return res
 
@@ -86,7 +85,9 @@ class SseStream:
         self.queue = queue.Queue(maxsize=0)
         self.not_done = True
 
-    def stream(self):
+    def stream(self, initial_data):
+        if self.initial_data is not None:
+            yield self.format_event(initial_data)
         while self.not_done:
             try:
                 msg = self.queue.get()
@@ -102,9 +103,11 @@ class SseStream:
         if not self.not_done:
             return
         logger.info("queueing {}".format(event.get("event", "unknown-event")))
+        self.queue.put_nowait(self.format_event(event))
+
+    def format_event(self, event):
         event_json = json.dumps(event)
-        msg = f"data: {event_json}\n\n"
-        self.queue.put_nowait(msg)
+        return f"data: {event_json}\n\n"
 
 __plugin_name__ = "Octosse Plugin"
 __plugin_pythoncompat__ = ">=3,<4"
