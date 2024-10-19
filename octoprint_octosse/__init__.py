@@ -112,17 +112,35 @@ class OctosseCallback(octoprint.printer.PrinterCallback):
     def __init__(self, printer, sink):
         self.printer = printer
         self.sink = sink
+
     def on_printer_add_log(self, data):
         logger.debug(f"on_printer_add_log: {data}")
+        try:
+            self.sink.send_event(data)
+        except:
+            self.printer.unregister_callback(self)
 
     def on_printer_add_message(self, data):
         logger.debug(f"on_printer_add_message: {data}")
+        try:
+            self.sink.send_event(data)
+        except:
+            self.printer.unregister_callback(self)
 
     def on_printer_received_registered_message(self, data):
         logger.debug(f"on_printer_received_registered_message: {data}")
+        try:
+            self.sink.send_event(data)
+        except:
+            self.printer.unregister_callback(self)
 
     def on_printer_send_initial_data(self, data):
         logger.debug(f"on_printer_send_initial_data: {data}")
+        try:
+            self.sink.send_event(data)
+        except:
+            self.printer.unregister_callback(self)
+
     def on_printer_send_current_data(self, data):
         logger.debug(f"on_printer_send_current_data: {data}")
         try:
