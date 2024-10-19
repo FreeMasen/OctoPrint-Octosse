@@ -11,11 +11,18 @@ import queue
 logger = logging.getLogger("octoprint.plugins.octosse")
 
 class OctossePlugin(
+    octoprint.plugin.StartupPlugin,
     octoprint.plugin.BlueprintPlugin,
     octoprint.plugin.EventHandlerPlugin,
 ):
     def __init__(self):
         self.queues = []
+    
+    def on_startup(self, host, port):
+        logger.debug(f"on_startup({host}, {port})")
+
+    def on_after_startup(self):
+        logger.debug("on_after_startup")
 
     def on_event(self, event, payload):
         logger.debug(f"event {payload}")
@@ -54,7 +61,7 @@ class OctossePlugin(
             pass
 
     def listen(self):
-        q = queue.Queue(maxsize=1)
+        q = queue.Queue(maxsize=0)
         return q
 
     def is_blueprint_csrf_protected(self):
