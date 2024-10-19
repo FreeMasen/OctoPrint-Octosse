@@ -117,35 +117,42 @@ class OctosseCallback(octoprint.printer.PrinterCallback):
         logger.debug(f"on_printer_add_log: {data}")
         try:
             self.sink.send_event(data)
-        except:
+        except Exception as ex:
+            logger.debug(f"error in on_printer_add_log, unregestering: {ex}")
             self.printer.unregister_callback(self)
 
     def on_printer_add_message(self, data):
         logger.debug(f"on_printer_add_message: {data}")
         try:
             self.sink.send_event(data)
-        except:
+        except Exception as ex:
+            logger.debug(f"error in on_printer_add_message, unregestering: {ex}")
             self.printer.unregister_callback(self)
 
     def on_printer_received_registered_message(self, data):
         logger.debug(f"on_printer_received_registered_message: {data}")
         try:
             self.sink.send_event(data)
-        except:
+        except Exception as ex:
+            logger.debug(
+                f"error in on_printer_received_registered_message, unregestering: {ex}"
+            )
             self.printer.unregister_callback(self)
 
     def on_printer_send_initial_data(self, data):
         logger.debug(f"on_printer_send_initial_data: {data}")
         try:
             self.sink.send_event(data)
-        except:
+        except Exception as ex:
+            logger.debug(f"error in on_printer_send_initial_data, unregestering: {ex}")
             self.printer.unregister_callback(self)
 
     def on_printer_send_current_data(self, data):
         logger.debug(f"on_printer_send_current_data: {data}")
         try:
             self.sink.send_event(data)
-        except:
+        except Exception as ex:
+            logger.debug(f"error in on_printer_send_current_data, unregestering: {ex}")
             self.printer.unregister_callback(self)
 
 
