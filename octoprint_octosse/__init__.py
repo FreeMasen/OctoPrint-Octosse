@@ -78,7 +78,7 @@ class OctossePlugin(
         th.setDaemon(True)
         th.start()
         q.put_nowait(self.format_event(initial_data))
-        res.call_on_close(lambda: self.response_disconnected(q))
+        # res.call_on_close(lambda: self.response_disconnected(q))
         return res
 
     def get_initial_info(self):
