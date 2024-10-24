@@ -8,6 +8,7 @@ import octoprint.plugin
 import octoprint.printer
 import queue
 from typing import Generator
+from threading import Thread
 
 logger = logging.getLogger("octoprint.plugins.octosse")
 
@@ -23,24 +24,30 @@ IGNORED_EVENTS = set(
     ]
 )
 
+
 class OctossePlugin(
     octoprint.plugin.SimpleApiPlugin,
     octoprint.plugin.EventHandlerPlugin,
 ):
     def __init__(self):
-        self.queues = []
+        self.queue = []
 
     def on_event(self, event, payload):
         if event in IGNORED_EVENTS:
             logger.info("unhandled event {}:\n{}".format(event, json.dumps(payload)))
             return
+        event_str = self.format_event(
+            {
+                "event": event,
+                "data": payload,
+            }
+        )
         for queue in self.queues:
-            queue.send_event(
-                {
-                    "event": event,
-                    "data": payload,
-                }
-            )
+            queue.put_nowait(event_str)
+
+    def format_event(self, event: dict) -> str:
+        return "data: {}\n\n".format(json.dumps(event))
+
     def get_api_commands(self):
         return dict()
 
@@ -50,17 +57,28 @@ class OctossePlugin(
     def on_api_get(self, request):
         logger.info("subscribing!")
         initial_data = self.get_initial_info()
-        stream = SseStream()
-        self.queues.append(stream)
+        q = queue.Queue()
+        self.queues.append(q)
         res = flask.Response(
-            stream.stream(initial_data),
             mimetype="text/event-stream",
             headers={
                 "Content-Type": "text/event-stream",
                 "Cache-Control": "no-cache",
-            }
+            },
         )
-        # res.call_on_close(lambda: self.response_disconnected(stream))
+
+        def send_data(input, stream):
+            stream.flush()
+            while not stream.closed():
+                event = input.get()
+                stream.write(event)
+            logging.info("thread closed!")
+
+        th = Thread(target=send_data, args=[q, res.stream])
+        th.setDaemon(True)
+        th.start()
+        q.put_nowait(self.format_event(initial_data))
+        res.call_on_close(lambda: self.response_disconnected(q))
         return res
 
     def get_initial_info(self):
@@ -87,35 +105,6 @@ class OctossePlugin(
     def is_blueprint_csrf_protected(self):
         return True
 
-
-class SseStream:
-    def __init__(self):
-        self.queue = queue.Queue(maxsize=0)
-        self.not_done = True
-
-    def stream(self, initial_data) -> Generator[str, None, None]:
-        if self.initial_data is not None:
-            yield self.format_event(initial_data)
-        while self.not_done:
-            try:
-                msg = self.queue.get()
-                logger.info("yielding {msg}")
-                yield msg
-            except:
-                return
-
-    def done(self):
-        self.not_done = False
-
-    def send_event(self, event):
-        if not self.not_done:
-            return
-        logger.info("queueing {}".format(event.get("event", "unknown-event")))
-        self.queue.put_nowait(self.format_event(event))
-
-    def format_event(self, event):
-        event_json = json.dumps(event)
-        return f"data: {event_json}\n\n"
 
 __plugin_name__ = "Octosse Plugin"
 __plugin_pythoncompat__ = ">=3,<4"
