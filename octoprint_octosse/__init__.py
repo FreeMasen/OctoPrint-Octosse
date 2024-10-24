@@ -102,7 +102,7 @@ def format_sse_message(obj: Optional[dict]) -> str:
 
 def create_generator(queue) -> Generator[str, None, None]:
     try:
-        yield format_sse_message(queue.get(False, 60))
+        yield format_sse_message(queue.get(True, 60))
     except queue.Empty:
         logger.info("queue was empty, sending comment")
         yield format_sse_message()
