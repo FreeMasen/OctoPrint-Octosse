@@ -100,10 +100,10 @@ def format_sse_message(obj: Optional[dict]) -> str:
     return f"data: {s}"
 
 
-def create_generator(queue) -> Generator[str, None, None]:
+def create_generator(q) -> Generator[str, None, None]:
     while True:
         try:
-            yield format_sse_message(queue.get(True, 60))
+            yield format_sse_message(q.get(False, 60))
         except queue.Empty:
             logger.info("queue was empty, sending comment")
             yield format_sse_message()
