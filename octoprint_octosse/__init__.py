@@ -36,17 +36,13 @@ class OctossePlugin(
         if event in IGNORED_EVENTS:
             logger.info("unhandled event {}:\n{}".format(event, json.dumps(payload)))
             return
-        event_str = self.format_event(
-            {
-                "event": event,
-                "data": payload,
-            }
-        )
         for queue in self.queues:
-            queue.put_nowait(event_str)
-
-    def format_event(self, event: dict) -> str:
-        return "data: {}\n\n".format(json.dumps(event))
+            queue.put_nowait(
+                {
+                    "event": event,
+                    "data": payload,
+                }
+            )
 
     def get_api_commands(self):
         return dict()
@@ -79,7 +75,7 @@ class OctossePlugin(
         th.setDaemon(True)
         th.start()
         q.put_nowait(self.format_event(initial_data))
-        
+
         # res.call_on_close(lambda: self.response_disconnected(q))
         return res
 
