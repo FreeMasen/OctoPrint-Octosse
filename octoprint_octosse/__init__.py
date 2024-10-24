@@ -59,21 +59,10 @@ class OctossePlugin(
             flask.stream_with_context(create_generator(q)),
             mimetype="text/event-stream",
             headers={
-                "Content-Type": "text/event-stream",
                 "Cache-Control": "no-cache",
             },
         )
-
-        def send_data(input, stream):
-            stream.flush()
-            while not stream.closed():
-                event = input.get()
-                stream.write(event)
-            logging.info("thread closed!")
-
-        th = Thread(target=send_data, args=[q, res.stream])
-        th.setDaemon(True)
-        th.start()
+        res.automatically_set_content_length(False)
         q.put_nowait(initial_data)
 
         # res.call_on_close(lambda: self.response_disconnected(q))
