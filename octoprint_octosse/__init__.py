@@ -7,7 +7,7 @@ import logging
 import octoprint.plugin
 import octoprint.printer
 import queue
-from typing import Generator
+from typing import Generator, Optional
 from threading import Thread
 
 logger = logging.getLogger("octoprint.plugins.octosse")
@@ -60,6 +60,7 @@ class OctossePlugin(
         q = queue.Queue()
         self.queues.append(q)
         res = flask.Response(
+            create_generator(q),
             mimetype="text/event-stream",
             headers={
                 "Content-Type": "text/event-stream",
@@ -78,6 +79,7 @@ class OctossePlugin(
         th.setDaemon(True)
         th.start()
         q.put_nowait(self.format_event(initial_data))
+        
         # res.call_on_close(lambda: self.response_disconnected(q))
         return res
 
@@ -105,6 +107,20 @@ class OctossePlugin(
     def is_blueprint_csrf_protected(self):
         return True
 
+def format_sse_message(obj: Optional[dict]) -> str:
+    if obj is None:
+        return ":comment\n\n"
+    s = json.dumps(obj)
+    return f"data: {s}"
+
+
+def create_generator(queue) -> Generator[str, None, None]:
+    try:
+        yield format_sse_message(queue.get(False, 60))
+    except queue.Empty:
+        yield format_sse_message()
+    except queue.Shutdown:
+        return
 
 __plugin_name__ = "Octosse Plugin"
 __plugin_pythoncompat__ = ">=3,<4"
