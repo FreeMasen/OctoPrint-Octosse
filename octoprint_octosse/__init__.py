@@ -55,7 +55,7 @@ class OctossePlugin(
         initial_data = self.get_initial_info()
         q = queue.Queue()
         self.queues.append(q)
-        # q.put_nowait(initial_data)
+        q.put_nowait(initial_data)
         res = flask.Response(
             create_generator(q),
             mimetype="text/event-stream",
@@ -101,14 +101,15 @@ def format_sse_message(obj: Optional[dict]) -> str:
 
 
 def create_generator(queue) -> Generator[str, None, None]:
-    try:
-        yield format_sse_message(queue.get(True, 60))
-    except queue.Empty:
-        logger.info("queue was empty, sending comment")
-        yield format_sse_message()
-    except queue.Shutdown:
-        logger.info("queue has been shutdown")
-        return
+    while True:
+        try:
+            yield format_sse_message(queue.get(True, 60))
+        except queue.Empty:
+            logger.info("queue was empty, sending comment")
+            yield format_sse_message()
+        except queue.Shutdown:
+            logger.info("queue has been shutdown")
+            return
 
 __plugin_name__ = "Octosse Plugin"
 __plugin_pythoncompat__ = ">=3,<4"
