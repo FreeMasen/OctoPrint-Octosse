@@ -55,6 +55,7 @@ class OctossePlugin(
         initial_data = self.get_initial_info()
         q = queue.Queue()
         self.queues.append(q)
+        q.put_nowait(initial_data)
         res = flask.Response(
             create_generator(q),
             mimetype="text/event-stream",
@@ -63,8 +64,7 @@ class OctossePlugin(
             },
         )
         res.automatically_set_content_length = False
-        res.content_length = None
-        q.put_nowait(initial_data)
+        
 
         # res.call_on_close(lambda: self.response_disconnected(q))
         return res
