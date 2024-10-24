@@ -56,7 +56,7 @@ class OctossePlugin(
         q = queue.Queue()
         self.queues.append(q)
         res = flask.Response(
-            create_generator(q),
+            flask.stream_with_context(create_generator(q)),
             mimetype="text/event-stream",
             headers={
                 "Content-Type": "text/event-stream",
