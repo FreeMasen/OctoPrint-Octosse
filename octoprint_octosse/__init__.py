@@ -106,7 +106,7 @@ def create_generator(q) -> Generator[str, None, None]:
             yield format_sse_message(q.get(False, 60))
         except queue.Empty:
             logger.info("queue was empty, sending comment")
-            yield format_sse_message()
+            yield format_sse_message(None)
         except queue.Shutdown:
             logger.info("queue has been shutdown")
             return
