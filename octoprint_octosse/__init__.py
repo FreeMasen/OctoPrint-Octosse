@@ -114,8 +114,10 @@ def create_generator(queue) -> Generator[str, None, None]:
     try:
         yield format_sse_message(queue.get(False, 60))
     except queue.Empty:
+        logger.info("queue was empty, sending comment")
         yield format_sse_message()
     except queue.Shutdown:
+        logger.info("queue has been shutdown")
         return
 
 __plugin_name__ = "Octosse Plugin"
