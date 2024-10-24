@@ -74,7 +74,7 @@ class OctossePlugin(
         th = Thread(target=send_data, args=[q, res.stream])
         th.setDaemon(True)
         th.start()
-        q.put_nowait(self.format_event(initial_data))
+        q.put_nowait(initial_data)
 
         # res.call_on_close(lambda: self.response_disconnected(q))
         return res
