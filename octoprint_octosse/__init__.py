@@ -30,7 +30,7 @@ class OctossePlugin(
     octoprint.plugin.EventHandlerPlugin,
 ):
     def __init__(self):
-        self.queue = []
+        self.queues = []
 
     def on_event(self, event, payload):
         if event in IGNORED_EVENTS:
