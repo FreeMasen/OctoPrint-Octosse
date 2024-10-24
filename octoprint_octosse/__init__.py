@@ -62,7 +62,7 @@ class OctossePlugin(
                 "Cache-Control": "no-cache",
             },
         )
-        res.automatically_set_content_length(False)
+        res.automatically_set_content_length = False
         q.put_nowait(initial_data)
 
         # res.call_on_close(lambda: self.response_disconnected(q))
